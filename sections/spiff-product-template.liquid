@@ -1,0 +1,661 @@
+{{ 'spiff-product-template.scss.css' | asset_url | stylesheet_tag }}
+
+<div class="spiff-product-template">
+
+  
+  <div class="spiff-product-gallery" {{ block.shopify_attributes }}>
+
+    {% for block in section.blocks %}
+      {% case block.type %}
+
+        {% when 'product-image' %}
+          {% if block.settings.product-image-option == true %}
+            {% assign embeded = true %}
+            <div class="spiff-embed-product">
+            </div>
+
+          {% else %}
+
+            <div class="spiff-product-image">
+              <img class="product-image" src="{{ product.featured_image | img_url: 'master'}}" alt="{{ product.title }}" />
+            </div>
+
+          {% endif %}
+
+
+      {% endcase %}
+
+    {% endfor %}
+
+  </div>
+
+  
+  <div class="spiff-product-content" {{ block.shopify_attributes }}>
+    {% for block in section.blocks %}
+      {% case block.type %}
+
+        {% when 'product-title' %}
+          <div class="spiff-product-title">
+            <h1 class="product-title">
+              {{ product.title }}
+            </h1>
+          </div>
+
+        {% when 'product-price' %}
+          <div class="spiff-product-price">
+            <span class="product-price">
+              ${{ product.price | divided_by: 100 }}
+            </span>
+          </div>
+        
+        {% when 'product-description' %}
+          <div class="product-description">
+            {{ product.description }}
+          </div>
+
+
+        {% when 'product-form' %}
+
+        {% if block.settings.redirect-to-cart == true %}
+          {% assign redirect = true %}
+        {% endif %}
+
+          <div class="product-form">
+            
+            {% if block.settings.quantity == true %}
+            {% assign qtyVar = true %}
+              <div class="quantity-container">
+                <label for="quantity">
+                  Quantity:
+                </label>
+                <input type="text" name="quantity" id="quantity" value="1"/>
+              </div>
+            {% endif %}
+
+          </div>
+
+        {% when 'cart-button-standard' %}
+          <button 
+            class="spiff-button" 
+            onclick="spiffCaptureStandard()"
+            style="
+            width: {{ block.settings.spiff-button-standard-width }}px;
+            height: {{ block.settings.spiff-button-standard-height }}px;
+            background-color: {{ block.settings.spiff-button-standard-background }};
+            color: {{ block.settings.spiff-button-standard-color }};
+            border-style: {{ block.settings.spiff-button-standard-border }};
+            border-width: {{ block.settings.spiff-button-standard-border-width}}px;
+            border-color: {{ block.settings.spiff-button-standard-border-color}};
+            border-top-right-radius: {{ block.settings.spiff-button-standard-border-tr-radius }}px;
+            border-bottom-right-radius: {{ block.settings.spiff-button-standard-border-br-radius }}px;
+            border-bottom-left-radius: {{ block.settings.spiff-button-standard-border-bl-radius }}px;
+            border-top-left-radius: {{ block.settings.spiff-button-standard-border-tl-radius }}px;
+            margin-top: {{ block.settings.spiff-button-standard-margin-top }}px;
+            margin-right: {{ block.settings.spiff-button-standard-margin-right }}px;
+            margin-bottom: {{ block.settings.spiff-button-standard-margin-bottom }}px;
+            margin-left: {{ block.settings.spiff-button-standard-margin-left }}px;
+            "
+          >
+            {{ block.settings.spiff-button-standard-text }}
+          </button>
+
+        {% when 'cart-button-design' %}
+          <button 
+            class="spiff-button" 
+            onclick="spiffCaptureDesign()"
+            style="
+            background-color: {{ block.settings.spiff-button-design-background }};
+            color: {{ block.settings.spiff-button-design-color }};
+            "
+          >
+            {{ block.settings.spiff-button-design-text }}
+          </button>
+
+
+      {% endcase %}
+    {% endfor %}
+  </div>
+
+
+</div>
+
+<script>
+  let qtyCheck = "{{ qtyVar }}";
+  let embedCheck = "{{ embeded }}";
+  let redirectCheck = "{{ redirect }}";
+  let prodId = "{{ product.id }}";
+
+  
+
+  //Standard Product Function.
+  function spiffCaptureStandard() {
+    function createProduct(product) {
+      let options = {
+        integrationId: "{{ shop.permanent_domain }}",
+        productId: prodId
+      };
+
+      product = new window.Spiff.Product(options);
+
+      return product;
+    }
+
+    const product = createProduct();
+    
+    async function checkActive(){
+      const waitForActive = await product.confirmActive();
+    }
+
+    function createTransactionOptions(tOptions) {
+      if(embedCheck) {
+        tOptions = {
+          presentmentCurrency: "{{ cart.currency.iso_code }}",
+          product: product,
+          shouldCreateDesignProduct: false,
+          embedElement: document.querySelector('.spiff-embed-product')
+        };
+
+        return tOptions;
+      } else {
+        tOptions = {
+          presentmentCurrency: "{{ cart.currency.iso_code }}",
+          product: product,
+          shouldCreateDesignProduct: false
+        }
+
+        return tOptions;
+      }
+    }
+
+    function createPayload(payload, lineItem){
+      if(qtyCheck) {
+        
+        payload = {
+          items: [
+            {
+              id: "{{ product.first_available_variant.id }}",
+              quantity: document.getElementById('quantity').value,
+              properties: lineItem
+            }
+          ]
+        }
+
+        payload = JSON.stringify(payload);
+        return payload;
+      } else {
+        payload = {
+          items: [
+            {
+              id: "{{ product.first_available_variant.id }}",
+              properties: lineItem
+            }
+          ]
+        }
+
+        payload = JSON.stringify(payload);
+        return payload;
+      }
+    }
+
+    const tOptions = createTransactionOptions();
+
+    async function createStandardizedTransaction(){
+      const checkForActive = await checkActive();
+      console.log('making transaction with: ', tOptions);
+
+      const transaction = new window.Spiff.Transaction(tOptions);
+
+      transaction.on('quit', () => {
+        console.log('Oh no, user quit transaction.');
+      })
+
+      transaction.on('complete', async (result) => {
+        let resultItems = {
+          ...result.designMetaData.metadata
+        };
+        resultItems.spiffTransactionId = result.transactionId;
+
+        const payload = createPayload(null, resultItems);
+        
+        if(redirectCheck) {
+          await fetch('/cart/add.js', {
+            method: 'POST',
+            body: payload,
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          })
+          .then(() => {
+            window.location.href = "/cart";
+          });
+        } else {
+          await fetch('/cart/add.js', {
+            method: 'POST',
+            body: payload,
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          });
+        }
+
+      });
+      transaction.execute();
+    }
+    createStandardizedTransaction();
+  }
+
+  //Open Spiff if embed option is enabled.
+  if(embedCheck) {
+    window.addEventListener('SpiffApiReady', function() {
+      spiffCaptureStandard();
+    })
+  }
+
+  //Design Product function.
+  function spiffCaptureDesign() {
+    function createProduct(product) {
+      let options = {
+        integrationId: "{{ shop.permanent_domain }}",
+        productId: prodId
+      };
+
+      product = new window.Spiff.Product(options);
+
+      return product;
+    }
+
+    const product = createProduct();
+    
+    async function checkActive(){
+      const waitForActive = await product.confirmActive();
+    }
+
+    function createTransactionOptions(tOptions) {
+      if(embedCheck) {
+        tOptions = {
+          presentmentCurrency: "{{ cart.currency.iso_code }}",
+          product: product,
+          shouldCreateDesignProduct: true,
+          embedElement: document.querySelector('.spiff-embed-product')
+        };
+
+        return tOptions;
+      } else {
+        tOptions = {
+          presentmentCurrency: "{{ cart.currency.iso_code }}",
+          product: product,
+          shouldCreateDesignProduct: true
+        }
+
+        return tOptions;
+      }
+    }
+
+    function createPayload(payload, productID, lineItem){
+      if(qtyCheck) {
+        
+        payload = {
+          items: [
+            {
+              id: productID,
+              quantity: document.getElementById('quantity').value,
+              properties: lineItem
+            }
+          ]
+        }
+
+        payload = JSON.stringify(payload);
+        return payload;
+      } else {
+        payload = {
+          items: [
+            {
+              id: productID,
+              properties: lineItem
+            }
+          ]
+        }
+
+        payload = JSON.stringify(payload);
+        return payload;
+      }
+    }
+
+    const tOptions = createTransactionOptions();
+
+    async function createDesignTransaction(){
+      const checkForActive = await checkActive();
+      console.log('making transaction with: ', tOptions);
+
+      const transaction = new window.Spiff.Transaction(tOptions);
+
+      transaction.on('quit', () => {
+        console.log('Oh no, user quit transaction.');
+      })
+
+      transaction.on('complete', async (result) => {
+        let resultItems = {
+          ...result.designMetaData.metadata
+        };
+        resultItems.spiffTransactionId = result.transactionId;
+
+        const payload = createPayload(null, result.designProductVariantId, resultItems);
+        
+        if(redirectCheck) {
+          await fetch('/cart/add.js', {
+            method: 'POST',
+            body: payload,
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          })
+          .then(() => {
+            window.location.href = "/cart";
+          });
+        } else {
+          await fetch('/cart/add.js', {
+            method: 'POST',
+            body: payload,
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          });
+        }
+
+      });
+      transaction.execute();
+    }
+    createDesignTransaction();
+  }
+</script>
+
+{% javascript %}
+
+{% endjavascript %}
+
+{% schema %}
+  {
+    "name": "Spiff Product Template",
+    "blocks": [
+      {
+        "type": "product-image",
+        "name": "Product Gallery",
+        "settings": [
+          {
+            "type": "checkbox",
+            "id": "product-image-option",
+            "label": "Embed Spiff 3D into product image?"
+          }
+        ]
+      },
+      {
+        "type": "product-title",
+        "name": "Product Title"
+      },
+      {
+        "type": "product-price",
+        "name": "Product Price"
+      },
+      {
+        "type": "product-description",
+        "name": "Product Description"
+      },
+      {
+        "type": "product-form",
+        "name": "Product Form",
+        "settings": [
+          {
+            "type": "checkbox",
+            "id": "quantity",
+            "label": "Enable Quantity?"
+          },
+          {
+            "type": "checkbox",
+            "id": "redirect-to-cart",
+            "label": "Redirect To Cart?"
+          }
+        ]
+      },
+      {
+        "type": "cart-button-standard",
+        "name": "Standard Customize Button",
+        "settings": [
+          {
+            "type": "header",
+            "content": "Customize Button Size"
+          },
+          {
+            "type": "range",
+            "id": "spiff-button-standard-width",
+            "min": 75,
+            "max": 300,
+            "step": 5,
+            "unit": "px",
+            "label": "Button Width",
+            "default": 100
+          },
+          {
+            "type": "range",
+            "id": "spiff-button-standard-height",
+            "min": 25,
+            "max": 300,
+            "step": 5,
+            "unit": "px",
+            "label": "Button height",
+            "default": 50
+          },
+          {
+            "type": "header",
+            "content": "Customize Button Colors"
+          },
+          {
+            "type": "color",
+            "id": "spiff-button-standard-background",
+            "default": "#000",
+            "label": "Button Color"
+          },
+          {
+            "type": "color",
+            "id": "spiff-button-standard-color",
+            "default": "#FFF",
+            "label": "Button Text Color"
+          },
+          {
+            "type": "header",
+            "content": "Customize Button Text"
+          },
+          {
+            "type": "text",
+            "id": "spiff-button-standard-text",
+            "default": "Customize Me",
+            "label": "Button Text",
+            "placeholder": "Customize Me"
+          },
+          {
+            "type": "header",
+            "content": "Customize Button Border"
+          },
+          {
+            "type": "color",
+            "id": "spiff-button-standard-border-color",
+            "label": "Border Color"
+          },
+          {
+            "type": "select",
+            "id": "spiff-button-standard-border",
+            "label": "Border Type",
+            "options": [
+              {
+                "value": "none",
+                "label": "None"
+              },
+              {
+                "value": "hidden",
+                "label": "Hidden"
+              },
+              {
+                "value": "dotted",
+                "label": "Dotted"
+              },
+              {
+                "value": "dashed",
+                "label": "Dashed"
+              },
+              {
+                "value": "solid",
+                "label": "Solid"
+              },
+              {
+                "value": "double",
+                "label": "Double"
+              },
+              {
+                "value": "groove",
+                "label": "Groove"
+              },
+              {
+                "value": "ridge",
+                "label": "Ridge"
+              },
+              {
+                "value": "inset",
+                "label": "Inset"
+              },
+              {
+                "value": "outset",
+                "label": "Outset"
+              }
+            ]
+          },
+          {
+            "type": "range",
+            "id": "spiff-button-standard-border-width",
+            "min": 0,
+            "max": 12,
+            "step": 1,
+            "unit": "px",
+            "label": "Border Width",
+            "default": 0
+          },
+          {
+            "type": "range",
+            "id": "spiff-button-standard-border-tr-radius",
+            "min": 0,
+            "max": 100,
+            "step": 1,
+            "unit": "px",
+            "label": "Border Top Right Radius",
+            "default": 0
+          },
+          {
+            "type": "range",
+            "id": "spiff-button-standard-border-br-radius",
+            "min": 0,
+            "max": 100,
+            "step": 1,
+            "unit": "px",
+            "label": "Border Bottom Right Radius",
+            "default": 0
+          },
+          {
+            "type": "range",
+            "id": "spiff-button-standard-border-bl-radius",
+            "min": 0,
+            "max": 100,
+            "step": 1,
+            "unit": "px",
+            "label": "Border Bottom Left Radius",
+            "default": 0
+          },
+          {
+            "type": "range",
+            "id": "spiff-button-standard-border-tl-radius",
+            "min": 0,
+            "max": 100,
+            "step": 1,
+            "unit": "px",
+            "label": "Border Top Left Radius",
+            "default": 0
+          },
+          {
+            "type": "header",
+            "content": "Customize Button Margin"
+          },
+          {
+            "type": "range",
+            "id": "spiff-button-standard-margin-top",
+            "min": 0,
+            "max": 100,
+            "step": 1,
+            "unit": "px",
+            "label": "Margin Top",
+            "default": 0
+          },
+          {
+            "type": "range",
+            "id": "spiff-button-standard-margin-right",
+            "min": 0,
+            "max": 100,
+            "step": 1,
+            "unit": "px",
+            "label": "Margin Right",
+            "default": 0
+          },
+          {
+            "type": "range",
+            "id": "spiff-button-standard-margin-bottom",
+            "min": 0,
+            "max": 100,
+            "step": 1,
+            "unit": "px",
+            "label": "Margin Bottom",
+            "default": 0
+          },
+          {
+            "type": "range",
+            "id": "spiff-button-standard-margin-left",
+            "min": 0,
+            "max": 100,
+            "step": 1,
+            "unit": "px",
+            "label": "Margin left",
+            "default": 0
+          }
+        ]
+      },
+      {
+        "type": "cart-button-design",
+        "name": "Design Customize Button",
+        "settings": [
+          {
+            "type": "header",
+            "content": "Customize Button Colors"
+          },
+          {
+            "type": "color",
+            "id": "spiff-button-design-background",
+            "default": "#000",
+            "label": "Button Color"
+          },
+          {
+            "type": "color",
+            "id": "spiff-button-design-color",
+            "default": "#FFF",
+            "label": "Button Text Color"
+          },
+          {
+            "type": "header",
+            "content": "Customize Button Text"
+          },
+          {
+            "type": "text",
+            "id": "spiff-button-design-text",
+            "default": "Customize Me",
+            "label": "Button Text",
+            "placeholder": "Customize Me"
+          }
+        ]
+      }
+    ]
+  }
+{% endschema %}
