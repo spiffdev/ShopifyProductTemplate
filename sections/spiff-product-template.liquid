@@ -2,8 +2,7 @@
 
   {{ 'spiff-product-template.scss.css' | asset_url | stylesheet_tag }}
 
-
-  <div class="spiff-product-template">
+  <div class="spiff-product-template clearfix">
 
     <div class="spiff-product-gallery" {{ block.shopify_attributes }}>
 
@@ -40,7 +39,6 @@
               $('.spiff-product-image').slick({
                 arrows: false,
                 rows: 1,
-                mobileFirst: true,
                 dots: true
               })
             </script>
@@ -513,15 +511,33 @@
     }
   </script>
 
+  <script>
+  let container = document.querySelector('.spiff-product-template');
+
+  if(container) {
+
+    let contStyle = window.getComputedStyle(container);
+    let direction = contStyle.flexDirection
+
+
+    console.log(direction);
+    if(direction == 'column' || direction == 'column-reverse') {
+      console.log(direction, 'yay')
+      document.querySelector('.spiff-product-gallery').classList.add = "width-fix";
+    }  
+  }
+
+  </script>
+
   <style>
 
-    @media (min-width: 200px) {
+
       .spiff-product-template {
         flex-direction: {{ section.settings.mobile-layout}};
       }
-    }
+    
 
-    @media (min-width: 768px) {
+    @media (min-width: 500px) {
       .spiff-product-template {
         flex-direction: {{ section.settings.tablet-layout}} !important;
       }
