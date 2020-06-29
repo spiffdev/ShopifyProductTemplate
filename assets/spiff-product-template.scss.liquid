@@ -19,10 +19,14 @@ $screen-md-min: 990px;
     display: flex;
 
     .spiff-product-gallery {
-        width: 100%;
+        width: 500px;
         height: 100%;
         margin-top: 1em;
         margin-bottom: 1em;
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;
 
         .customize-badge::before {
             content: 'Customise Me';
@@ -44,6 +48,25 @@ $screen-md-min: 990px;
             z-index: 1;
             font-weight: 700;
             line-height: 1;
+        }
+
+        .slick-slider {
+            width: 500px;
+            height: 500px;
+            .slick-list {
+                .slick-track {
+                    display: flex;
+                    flex-direction: row;
+                    justify-content: center;
+                    align-items: center;
+
+                    .slick-slide {
+                        div {
+                            width: 100%;
+                        }
+                    }
+                }
+            }
         }
         
         .spiff-product-image {
@@ -175,6 +198,7 @@ $screen-md-min: 990px;
         flex-direction: row;
         justify-content: space-between;
         align-items: center;
+        padding: 0 !important;
 
         .quantity__button-decrease {
             background: transparent;
@@ -220,6 +244,7 @@ $screen-md-min: 990px;
             border: 0;
             text-align: center;
             border: 1px solid black;
+            padding: 0 !important;
         }
 
         .quantity__button-increase {
