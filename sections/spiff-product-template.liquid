@@ -188,7 +188,6 @@
         Unless the plugin comes with a section, it can be imported into ../templates/product.spiff.liquid eg:
         {% section 'review-section' %}
       {%- endcomment -%}
-
   </div>
 
   <script>
@@ -515,24 +514,6 @@
         })
       }
     }
-  </script>
-
-  <script>
-  let container = document.querySelector('.spiff-product-template');
-
-  if(container) {
-
-    let contStyle = window.getComputedStyle(container);
-    let direction = contStyle.flexDirection
-
-
-    console.log(direction);
-    if(direction == 'column' || direction == 'column-reverse') {
-      console.log(direction, 'yay')
-      document.querySelector('.spiff-product-gallery').classList.add = "width-fix";
-    }  
-  }
-
   </script>
 
   <style>
