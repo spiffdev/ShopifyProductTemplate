@@ -1,7 +1,7 @@
 //SCREEN SIZES
 $screen-sm-min: 768px;
 $screen-md-min: 990px;
-$screen-lg-min: 1024px;
+
 
 @mixin sm {
     @media (min-width: #{$screen-sm-min}) {
@@ -15,39 +15,25 @@ $screen-lg-min: 1024px;
     }
 }
 
-@mixin lg {
-    @media (min-width: #{$screen-lg-min}) {
-        @content
-    }
-}
-
 .spiff-product-template {
     display: flex;
-    width: 100%;
 
     .spiff-product-gallery {
         width: 100%;
         height: 100%;
         margin-top: 1em;
         margin-bottom: 1em;
-        display: flex;
-        flex-direction: row;
-        justify-content: center;
-        align-items: center;
 
-        @include sm {
-            width: 100%;
+        .tns-outer {
+            position: relative;
+            cursor: grab;
         }
 
-        @include md {
-            width: 400px;
+        .tns-outer:active {
+            cursor: grabbing;
         }
 
-        @include lg {
-            width: 500px;
-        }
-
-        .customize-badge::before {
+        .tns-outer::before {
             content: 'Customise Me';
             display: flex;
             width: 100px;
@@ -68,29 +54,6 @@ $screen-lg-min: 1024px;
             font-weight: 700;
             line-height: 1;
         }
-
-        .slick-slider {
-            width: 500px;
-            height: 500px;
-            .slick-list {
-                width: 100%;
-                height: 100%;
-                .slick-track {
-                    display: flex;
-                    flex-direction: row;
-                    justify-content: center;
-                    align-items: center;
-                    width: 100%;
-                    height: 100%;
-
-                    .slick-slide {
-                        div {
-                            width: 100%;
-                        }
-                    }
-                }
-            }
-        }
         
         .spiff-product-image {
             display: flex;
@@ -100,23 +63,6 @@ $screen-lg-min: 1024px;
             width: 100%;
             height: 500px;
             padding: 1em;
-
-
-
-            .flickity-viewport {
-                width: 100%;
-                height: 100%;
-                display: flex;
-                flex-direction: row;
-                justify-content: center;
-                align-items: center;
-            }
-
-            .flickity-slider {
-                height: 100%;
-                width: 100%;
-                
-            }
 
             .product-image-wrapper {
                 width: 100%;
@@ -153,18 +99,33 @@ $screen-lg-min: 1024px;
                 height: 150px;
             }
 
-            .flickity-viewport {
-                display: flex;
-                flex-direction: row;
-                justify-content: center;
-                align-self: center;
-            }
-            
             .thumbnail-slide {
                 width: 75px;
                 height: 75px;
             }
         }
+
+        .nav-container {
+            width: 100%;
+            height: 15px;
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+
+            span {
+                width: 10px;
+                height: 10px;
+                border: 1px solid #000;
+                border-radius: 100%;
+                box-sizing: border-box;
+                margin-left: 10px;
+            }
+
+            .tns-nav-active {
+                background-color: #000;
+            }
+        }
+
     }
 
     .spiff-product-content {
@@ -219,9 +180,8 @@ $screen-lg-min: 1024px;
         height: 60px;
         display: flex;
         flex-direction: row;
-        justify-content: space-around;
+        justify-content: space-between;
         align-items: center;
-        padding: 0 !important;
 
         .quantity__button-decrease {
             background: transparent;
@@ -267,7 +227,6 @@ $screen-lg-min: 1024px;
             border: 0;
             text-align: center;
             border: 1px solid black;
-            padding: 0 !important;
         }
 
         .quantity__button-increase {
