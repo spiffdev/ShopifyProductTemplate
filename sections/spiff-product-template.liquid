@@ -198,6 +198,12 @@
     let prodId = "{{ product.id }}";
     let qtyAmount = document.getElementById('quantity');
 
+    let pageSessionId;
+    
+    window.addEventListener('SpiffApiReady', function() {
+       pageSessionId = window.Spiff.Analytics.createPageSession();
+    })
+
     function increaseQty() {
       qtyAmount.value++;
       qtyAmount.innerHTML = qtyAmount.value;
@@ -239,7 +245,8 @@
             presentmentCurrency: "{{ cart.currency.iso_code }}",
             product: product,
             shouldCreateDesignProduct: false,
-            embedElement: document.querySelector('.spiff-embed-product')
+            embedElement: document.querySelector('.spiff-embed-product'),
+            pageSessionId
           };
 
           return tOptions;
@@ -247,7 +254,8 @@
           tOptions = {
             presentmentCurrency: "{{ cart.currency.iso_code }}",
             product: product,
-            shouldCreateDesignProduct: false
+            shouldCreateDesignProduct: false,
+            pageSessionId
           }
 
           return tOptions;
@@ -357,7 +365,8 @@
             presentmentCurrency: "{{ cart.currency.iso_code }}",
             product: product,
             shouldCreateDesignProduct: true,
-            embedElement: document.querySelector('.spiff-embed-product')
+            embedElement: document.querySelector('.spiff-embed-product'),
+            pageSessionId
           };
 
           return tOptions;
@@ -365,7 +374,8 @@
           tOptions = {
             presentmentCurrency: "{{ cart.currency.iso_code }}",
             product: product,
-            shouldCreateDesignProduct: true
+            shouldCreateDesignProduct: true,
+            pageSessionId
           }
 
           return tOptions;
